@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+env/
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Models
+models/*.pt
+models/*.pth
+models/*.h5
+
+# Dataset files
+datasets/
+*.csv
+*.zip
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+temp/
+cache/
+
+# Build files
+dist/
+build/
+
+# Environment variables
+.env
+
+# Audio/Video temp files
+*.mp4
+*.wav
+*.mp3
+
+# Matplotlib cache
+.matplotlib/
+
+# Torch cache
+.cache/

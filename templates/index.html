@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERITAS AI — Multimodal Fake Content Detector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/*══════════════════════════════════════════════════════════
+  VERITAS AI — Design System
+  Theme: Dark Research Terminal × Cyberpunk Lab
+  Fonts: Outfit (display) + Space Mono (labels/code)
+══════════════════════════════════════════════════════════*/
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #080b14;
+  --surface:  #0e1220;
+  --card:     #111525;
+  --card2:    #141929;
+  --border:   #1c2235;
+  --border2:  #252d45;
+  --violet:   #7c6ff7;
+  --violet2:  #a09aff;
+  --coral:    #ff6b6b;
+  --cyan:     #00d4ff;
+  --green:    #3ae8a0;
+  --yellow:   #ffd166;
+  --text:     #dde1f0;
+  --text2:    #8590ab;
+  --text3:    #4e566a;
+  --mono:    'Space Mono',monospace;
+  --sans:    'Outfit',sans-serif;
+  --r:        10px;
+  --gv: 0 0 24px rgba(124,111,247,.35);
+  --gc: 0 0 24px rgba(0,212,255,.25);
+  --gg: 0 0 24px rgba(58,232,160,.25);
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── animated grid ──────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(124,111,247,.025) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(124,111,247,.025) 1px,transparent 1px);
+  background-size:44px 44px;
+  animation:gridMove 24s linear infinite;
+}
+@keyframes gridMove{to{background-position:44px 44px}}
+
+/* ── ambient orbs ───────────────────────────── */
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:.14;animation:orbDrift 14s ease-in-out infinite}
+.o1{width:520px;height:520px;background:var(--violet);top:-160px;left:-160px}
+.o2{width:420px;height:420px;background:var(--coral);bottom:-120px;right:-120px;animation-delay:-7s}
+.o3{width:320px;height:320px;background:var(--cyan);top:45%;left:62%;animation-delay:-3.5s}
+@keyframes orbDrift{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-28px) scale(1.06)}}
+
+/* ── layout ─────────────────────────────────── */
+.wrap{max-width:1220px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+/* ══ HEADER ══════════════════════════════════ */
+header{
+  position:sticky;top:0;z-index:200;
+  border-bottom:1px solid var(--border);
+  background:rgba(8,11,20,.9);
+  backdrop-filter:blur(18px);padding:0;
+}
+.hdr{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-box{
+  width:36px;height:36px;border-radius:8px;
+  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  display:grid;place-items:center;font-size:17px;box-shadow:var(--gv);
+}
+.logo-name{font-size:16px;font-weight:900;letter-spacing:2.5px;color:var(--text)}
+.logo-name span{color:var(--violet2)}
+.logo-badge{
+  font-family:var(--mono);font-size:9px;letter-spacing:1.5px;
+  color:var(--green);border:1px solid rgba(58,232,160,.4);
+  padding:2px 8px;border-radius:4px;
+}
+.hdr-tags{display:flex;gap:7px}
+.htag{font-family:var(--mono);font-size:9px;letter-spacing:.8px;color:var(--text3);border:1px solid var(--border2);padding:3px 9px;border-radius:5px}
+
+/* ══ HERO ════════════════════════════════════ */
+.hero{padding:56px 0 36px;text-align:center}
+.hero-eyebrow{
+  font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--violet2);
+  display:block;margin-bottom:18px;animation:riseUp .55s ease both;
+}
+.hero h1{
+  font-size:clamp(28px,5.5vw,56px);font-weight:900;line-height:1.12;
+  letter-spacing:-1.5px;margin-bottom:18px;
+  animation:riseUp .55s ease .1s both;
+}
+.hero h1 .v{color:var(--violet2)}.hero h1 .c{color:var(--cyan)}.hero h1 .g{color:var(--green)}
+.hero-sub{color:var(--text2);font-size:15px;max-width:620px;margin:0 auto 32px;line-height:1.75;animation:riseUp .55s ease .18s both}
+.hero-pills{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;animation:riseUp .55s ease .26s both}
+.pill{
+  font-family:var(--mono);font-size:10px;letter-spacing:1px;
+  padding:6px 14px;border-radius:20px;border:1px solid var(--border2);
+  color:var(--text2);background:var(--card);
+}
+.pill span{color:var(--violet2);margin-right:4px}
+
+@keyframes riseUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* ══ TAB NAV ════════════════════════════════ */
+.tab-wrap{
+  position:sticky;top:60px;z-index:150;
+  border-bottom:1px solid var(--border);
+  background:rgba(8,11,20,.88);backdrop-filter:blur(14px);
+}
+.tab-nav{display:flex;overflow-x:auto;gap:0}
+.tab-nav::-webkit-scrollbar{height:3px}
+.tbtn{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:1.2px;
+  padding:15px 22px;border:none;background:transparent;cursor:pointer;
+  color:var(--text3);white-space:nowrap;position:relative;transition:color .2s;
+}
+.tbtn::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--violet);transform:scaleX(0);
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.tbtn.on{color:var(--violet2)}.tbtn.on::after{transform:scaleX(1)}
+.tbtn:hover:not(.on){color:var(--text)}
+.ti{margin-right:6px;font-size:14px}
+
+/* ══ PANELS ════════════════════════════════ */
+.panel{display:none;padding:32px 0 48px}
+.panel.on{display:block}
+
+.sec-head{text-align:center;margin-bottom:28px}
+.sec-sup{font-family:var(--mono);font-size:10px;letter-spacing:3px;color:var(--violet2);display:block;margin-bottom:10px}
+.sec-head h2{font-size:22px;font-weight:800;margin-bottom:7px}
+.sec-head p{font-size:13px;color:var(--text2)}
+
+/* ══ GRID ══════════════════════════════════ */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+
+/* ══ CARD ══════════════════════════════════ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px;transition:border-color .2s}
+.card:hover{border-color:var(--border2)}
+.clabel{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:2px;color:var(--text3);
+  text-transform:uppercase;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.clabel::before{content:'';width:18px;height:1px;background:var(--border2)}
+
+/* ══ INPUT ══════════════════════════════════ */
+.mode-bar{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--text3);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;padding:8px 12px;margin-bottom:12px;
+}
+.mdot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 1.5s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+textarea{
+  width:100%;min-height:210px;resize:vertical;
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:14px;font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.65;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+textarea:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,111,247,.12)}
+textarea::placeholder{color:var(--text3)}
+.ccount{font-family:var(--mono);font-size:9px;color:var(--text3);text-align:right;margin-top:5px}
+
+/* ── drop zone ─────────────────────────────── */
+.drop{
+  border:2px dashed var(--border2);border-radius:10px;padding:38px 20px;
+  text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;
+}
+.drop.hover{border-color:var(--violet);background:rgba(124,111,247,.06)}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:34px;display:block;margin-bottom:10px}
+.drop-lbl{font-size:14px;color:var(--text2);margin-bottom:4px}
+.drop-sub{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.fsel{font-family:var(--mono);font-size:10px;color:var(--green);margin-top:8px}
+
+/* ── analyse button ────────────────────────── */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:14px;margin-top:14px;
+  background:linear-gradient(135deg,var(--violet),#5048c8);
+  border:none;border-radius:8px;cursor:pointer;
+  font-family:var(--mono);font-size:11px;letter-spacing:2px;color:#fff;font-weight:700;
+  text-transform:uppercase;transition:all .2s;box-shadow:var(--gv);position:relative;overflow:hidden;
+}
+.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);opacity:0;transition:opacity .2s}
+.btn:hover::before{opacity:1}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,111,247,.55)}
+.btn:active{transform:none}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rotate .7s linear infinite;display:none}
+.btn.loading .spin{display:block}.btn.loading .btxt{display:none}
+@keyframes rotate{to{transform:rotate(360deg)}}
+
+/* ══ RESULT ══════════════════════════════════ */
+.res-empty{height:100%;min-height:310px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);font-family:var(--mono);font-size:10px;letter-spacing:1px}
+.res-empty .ei{font-size:46px;opacity:.4}
+
+.verdict{
+  border-radius:9px;padding:18px;margin-bottom:16px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  border-left:4px solid;animation:riseUp .4s ease;
+}
+.verdict.human{background:rgba(58,232,160,.07);border-color:var(--green)}
+.verdict.ai   {background:rgba(124,111,247,.08);border-color:var(--violet)}
+.verdict.fake {background:rgba(255,107,107,.08);border-color:var(--coral)}
+.verdict.deep {background:rgba(255,209,102,.08);border-color:var(--yellow)}
+
+.vlabel{font-size:22px;font-weight:900;letter-spacing:-.5px}
+.vlabel.human{color:var(--green)}.vlabel.ai{color:var(--violet2)}.vlabel.fake{color:var(--coral)}.vlabel.deep{color:var(--yellow)}
+
+.cpill{font-family:var(--mono);font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid currentColor}
+.rbadge{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;padding:3px 9px;border-radius:4px;text-transform:uppercase;display:inline-block;margin-top:6px}
+.rbadge.Low   {background:rgba(58,232,160,.14);color:var(--green)}
+.rbadge.Medium{background:rgba(255,209,102,.14);color:var(--yellow)}
+.rbadge.High  {background:rgba(255,107,107,.14);color:var(--coral)}
+
+/* ── score bars ─────────────────────────────── */
+.srow{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.sname{font-size:12px;color:var(--text2);width:136px;flex-shrink:0}
+.strack{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.sfill{height:100%;border-radius:3px;width:0;transition:width .85s cubic-bezier(.34,1.56,.64,1)}
+.sfill.real  {background:var(--green)}
+.sfill.ai    {background:var(--violet)}
+.sfill.fake  {background:var(--coral)}
+.sfill.clone {background:var(--yellow)}
+.sfill.manip {background:var(--cyan)}
+.sfill.deep  {background:var(--yellow)}
+.sval{font-family:var(--mono);font-size:10px;color:var(--text3);width:42px;text-align:right}
+
+/* ── features ───────────────────────────────── */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0}
+.fitem{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.fkey{font-family:var(--mono);font-size:8.5px;color:var(--text3);letter-spacing:.5px}
+.fval{font-size:13px;font-weight:700;color:var(--text);margin-top:2px}
+
+/* ── explanation ────────────────────────────── */
+.expl{display:flex;gap:10px;padding:10px 12px;margin-bottom:6px;background:var(--surface);border-radius:6px;border-left:2px solid var(--border2);font-size:12px;color:var(--text2);line-height:1.55;animation:riseUp .3s ease both}
+.expl::before{content:'//';font-family:var(--mono);color:var(--text3);flex-shrink:0}
+
+/* ── preview img ────────────────────────────── */
+.prev-img{width:100%;border-radius:8px;margin-top:10px;max-height:240px;object-fit:contain}
+.plot-img{width:100%;border-radius:8px;margin-bottom:12px;border:1px solid var(--border)}
+
+/* ── download btn ───────────────────────────── */
+.dl-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 18px;margin-top:16px;width:100%;
+  background:transparent;border:1px solid var(--border2);border-radius:8px;
+  cursor:pointer;color:var(--text2);font-family:var(--mono);font-size:9.5px;
+  letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;
+}
+.dl-btn:hover{border-color:var(--violet);color:var(--violet2);box-shadow:var(--gv)}
+
+/* ══ PLOTS ══════════════════════════════════ */
+.plt-card{display:none;margin-bottom:28px}
+.plt-card.on{display:block}
+.plt-tabs{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+.ptab{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:5px 13px;border-radius:5px;cursor:pointer;border:1px solid var(--border2);color:var(--text3);background:transparent;transition:all .15s}
+.ptab.on{background:var(--violet);border-color:var(--violet);color:#fff}
+.ppane{display:none}.ppane.on{display:block}
+
+/* ══ ARCHITECTURE PANEL ═════════════════════ */
+.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding-bottom:40px}
+@media(max-width:750px){.arch-grid{grid-template-columns:1fr}}
+.arch-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.arch-icon{font-size:26px;margin-bottom:10px;display:block}
+.arch-card h3{font-size:14px;font-weight:800;margin-bottom:8px}
+.arch-card p{font-size:12px;color:var(--text2);line-height:1.65}
+.pipe{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:14px;font-family:var(--mono);font-size:10.5px;color:var(--text2);line-height:2;margin-top:14px}
+.pipe .s{color:var(--violet2)}.pipe .a{color:var(--text3)}
+
+/* ══ LOADING ════════════════════════════════ */
+.result-wrap{position:relative}
+.lov{display:none;position:absolute;inset:0;z-index:10;background:rgba(8,11,20,.82);backdrop-filter:blur(5px);border-radius:var(--r);flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.lov.on{display:flex}
+.lring{width:48px;height:48px;border-radius:50%;border:3px solid var(--border2);border-top-color:var(--violet);animation:rotate .8s linear infinite}
+.ltxt{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text3);animation:blink 1.2s ease infinite}
+
+/* ══ FOOTER ══════════════════════════════════ */
+footer{border-top:1px solid var(--border);padding:22px 0;position:relative;z-index:1;margin-top:20px}
+.foot-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.fmono{font-family:var(--mono);font-size:9.5px;color:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- orbs -->
+<div class="orb o1"></div>
+<div class="orb o2"></div>
+<div class="orb o3"></div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="wrap hdr">
+    <div class="logo">
+      <div class="logo-box">🔍</div>
+      <span class="logo-name">VERITAS<span> AI</span></span>
+      <span class="logo-badge">RESEARCH v1.0</span>
+    </div>
+    <div class="hdr-tags">
+      <span class="htag">DistilBERT</span>
+      <span class="htag">ResNet50</span>
+      <span class="htag">Grad-CAM</span>
+      <span class="htag">XAI</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══ HERO ══ -->
+<div class="wrap">
+<div class="hero">
+  <span class="hero-eyebrow">// EXPLAINABLE MULTIMODAL AI DETECTION FRAMEWORK</span>
+  <h1>Detect <span class="v">Fake News</span> &amp;<br><span class="c">AI-Generated</span> <span class="g">Content</span></h1>
+  <p class="hero-sub">A research-grade multimodal framework that analyzes text, images, audio and video using Deep Learning + Explainable AI to identify synthetic and manipulated media.</p>
+  <div class="hero-pills">
+    <span class="pill"><span>NLP</span>DistilBERT</span>
+    <span class="pill"><span>CV</span>ResNet50</span>
+    <span class="pill"><span>XAI</span>Grad-CAM</span>
+    <span class="pill"><span>Audio</span>MFCC + CNN</span>
+    <span class="pill"><span>Video</span>Frame Analysis</span>
+  </div>
+</div>
+</div>
+
+<!-- ══ TAB NAV ══ -->
+<div class="tab-wrap">
+  <div class="wrap">
+    <nav class="tab-nav">
+      <button class="tbtn on" onclick="tab('text')" id="tb-text"><span class="ti">📝</span>TEXT_DETECTOR</button>
+      <button class="tbtn"    onclick="tab('image')" id="tb-image"><span class="ti">🖼</span>IMAGE_DETECTOR</button>
+      <button class="tbtn"    onclick="tab('audio')" id="tb-audio"><span class="ti">🎤</span>AUDIO_DETECTOR</button>
+      <button class="tbtn"    onclick="tab('video')" id="tb-video"><span class="ti">🎬</span>VIDEO_DETECTOR</button>
+      <button class="tbtn"    onclick="tab('arch')"  id="tb-arch"><span class="ti">📡</span>ARCHITECTURE</button>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ═══════ TEXT PANEL ═══════ -->
+<div class="panel on" id="pn-text">
+  <div class="sec-head">
+    <span class="sec-sup">// MODULE 01</span>
+    <h2>Text Analysis Module</h2>
+    <p>DistilBERT (768-d) embeddings + 9 Stylometric features → HybridMLP classifier</p>
+  </div>
+  <div class="grid2">
+    <!-- Input -->
+    <div class="card">
+      <div class="clabel">Input Text</div>
+      <div class="mode-bar"><span class="mdot"></span>PIPELINE ACTIVE — DISTILBERT + STYLOMETRIC ENGINE</div>
+      <textarea id="txt" placeholder="Paste a news article, social media post, or any piece of text (minimum 20 characters).
+
+Try something sensational like:
+'SHOCKING: Scientists reveal the government has been hiding the truth about vaccines from the public for decades. Exclusive leaked documents prove everything...'" oninput="cc()"></textarea>
+      <div class="ccount"><span id="cc-val">0</span> chars · Ctrl+Enter to analyse</div>
+      <button class="btn" id="btn-text" onclick="doText()">
+        <div class="spin"></div><span class="btxt">⚡ ANALYSE TEXT</span>
+      </button>
+    </div>
+    <!-- Result -->
+    <div class="card result-wrap">
+      <div class="clabel">Analysis Result</div>
+      <div class="lov" id="lov-text"><div class="lring"></div><div class="ltxt">PROCESSING...</div></div>
+      <div id="res-text"><div class="res-empty"><span class="ei">🔬</span><span>Awaiting input</span></div></div>
+    </div>
+  </div>
+  <div class="card plt-card" id="plt-text">
+    <div class="clabel">Visualizations</div>
+    <div class="plt-tabs" id="pt-text"></div>
+    <div id="pp-text"></div>
+  </div>
+</div>
+
+<!-- ═══════ IMAGE PANEL ═══════ -->
+<div class="panel" id="pn-image">
+  <div class="sec-head">
+    <span class="sec-sup">// MODULE 02</span>
+    <h2>Image Analysis Module</h2>
+    <p>ResNet50 CNN + Forensic Analysis (FFT, Texture, Edge) + Grad-CAM Heatmaps</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="clabel">Upload Image</div>
+      <div class="drop" id="dz-image"
+           ondragover="dov(event,'dz-image')" ondragleave="dol('dz-image')"
+           ondrop="dop(event,'fi-image','dz-image')">
+        <input type="file" id="fi-image" accept="image/*"
+               onchange="fsel('fi-image','fn-image','pv-image')">
+        <span class="drop-icon">🖼</span>
+        <div class="drop-lbl">Drop image here or click to browse</div>
+        <div class="drop-sub">PNG · JPG · JPEG · WEBP · BMP</div>
+        <div class="fsel" id="fn-image"></div>
+      </div>
+      <img id="pv-image" class="prev-img" style="display:none">
+      <button class="btn" id="btn-image" onclick="doFile('image')" disabled>
+        <div class="spin"></div><span class="btxt">🔍 ANALYSE IMAGE</span>
+      </button>
+    </div>
+    <div class="card result-wrap">
+      <div class="clabel">Analysis Result</div>
+      <div class="lov" id="lov-image"><div class="lring"></div><div class="ltxt">PROCESSING...</div></div>
+      <div id="res-image"><div class="res-empty"><span class="ei">🖼</span><span>Upload an image</span></div></div>
+    </div>
+  </div>
+  <div class="card plt-card" id="plt-image">
+    <div class="clabel">Grad-CAM &amp; Visualizations</div>
+    <div id="pp-image"></div>
+  </div>
+</div>
+
+<!-- ═══════ AUDIO PANEL ═══════ -->
+<div class="panel" id="pn-audio">
+  <div class="sec-head">
+    <span class="sec-sup">// MODULE 03</span>
+    <h2>Audio / Voice Analysis Module</h2>
+    <p>Librosa MFCC (40 coefficients) + Pitch + Spectral Contrast → CNN classifier</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="clabel">Upload Audio</div>
+      <div class="drop" id="dz-audio"
+           ondragover="dov(event,'dz-audio')" ondragleave="dol('dz-audio')"
+           ondrop="dop(event,'fi-audio','dz-audio')">
+        <input type="file" id="fi-audio" accept="audio/*"
+               onchange="fsel('fi-audio','fn-audio',null)">
+        <span class="drop-icon">🎤</span>
+        <div class="drop-lbl">Drop audio file here or click to browse</div>
+        <div class="drop-sub">WAV · MP3 · FLAC · OGG · M4A</div>
+        <div class="fsel" id="fn-audio"></div>
+      </div>
+      <button class="btn" id="btn-audio" onclick="doFile('audio')" disabled>
+        <div class="spin"></div><span class="btxt">🎧 ANALYSE AUDIO</span>
+      </button>
+    </div>
+    <div class="card result-wrap">
+      <div class="clabel">Analysis Result</div>
+      <div class="lov" id="lov-audio"><div class="lring"></div><div class="ltxt">PROCESSING...</div></div>
+      <div id="res-audio"><div class="res-empty"><span class="ei">🎤</span><span>Upload an audio file</span></div></div>
+    </div>
+  </div>
+  <div class="card plt-card" id="plt-audio">
+    <div class="clabel">MFCC Spectrogram &amp; Visualizations</div>
+    <div id="pp-audio"></div>
+  </div>
+</div>
+
+<!-- ═══════ VIDEO PANEL ═══════ -->
+<div class="panel" id="pn-video">
+  <div class="sec-head">
+    <span class="sec-sup">// MODULE 04</span>
+    <h2>Video / Deepfake Detection Module</h2>
+    <p>Frame extraction (16 frames) + Haar Face Detection + Temporal Inconsistency Analysis</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="clabel">Upload Video</div>
+      <div class="drop" id="dz-video"
+           ondragover="dov(event,'dz-video')" ondragleave="dol('dz-video')"
+           ondrop="dop(event,'fi-video','dz-video')">
+        <input type="file" id="fi-video" accept="video/*"
+               onchange="fsel('fi-video','fn-video',null)">
+        <span class="drop-icon">🎬</span>
+        <div class="drop-lbl">Drop video file here or click to browse</div>
+        <div class="drop-sub">MP4 · AVI · MOV · MKV · WebM</div>
+        <div class="fsel" id="fn-video"></div>
+      </div>
+      <button class="btn" id="btn-video" onclick="doFile('video')" disabled>
+        <div class="spin"></div><span class="btxt">🕵️ ANALYSE VIDEO</span>
+      </button>
+    </div>
+    <div class="card result-wrap">
+      <div class="clabel">Analysis Result</div>
+      <div class="lov" id="lov-video"><div class="lring"></div><div class="ltxt">PROCESSING FRAMES...</div></div>
+      <div id="res-video"><div class="res-empty"><span class="ei">🎬</span><span>Upload a video file</span></div></div>
+    </div>
+  </div>
+  <div class="card plt-card" id="plt-video">
+    <div class="clabel">Frame Grid &amp; Temporal Analysis</div>
+    <div id="pp-video"></div>
+  </div>
+</div>
+
+<!-- ═══════ ARCHITECTURE PANEL ═══════ -->
+<div class="panel" id="pn-arch">
+  <div class="sec-head">
+    <span class="sec-sup">// SYSTEM DESIGN</span>
+    <h2>Framework Architecture</h2>
+    <p>Explainable Multi-Modal AI Detection — Research Overview</p>
+  </div>
+  <div class="arch-grid">
+    <div class="arch-card">
+      <span class="arch-icon">📝</span>
+      <h3>Text Module</h3>
+      <p>DistilBERT CLS embeddings (768-d) fused with 9 handcrafted stylometric features into a HybridMLP. Detects AI text, fake news, and human writing with XAI explanations.</p>
+      <div class="pipe">
+        <span class="s">INPUT TEXT</span><br>
+        <span class="a">↓</span> Preprocessing<br>
+        <span class="a">↓</span> DistilBERT CLS (768-d)<br>
+        <span class="a">↓</span> Stylometric Feats (9-d)<br>
+        <span class="a">↓</span> HybridMLP Classifier<br>
+        <span class="s">↓ PREDICTION + XAI</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <span class="arch-icon">🖼</span>
+      <h3>Image Module</h3>
+      <p>Pretrained ResNet50 with transfer learning for 3-class classification. Grad-CAM heatmaps highlight suspicious regions. Forensic FFT analysis detects GAN smoothing artefacts.</p>
+      <div class="pipe">
+        <span class="s">INPUT IMAGE</span><br>
+        <span class="a">↓</span> Resize 224×224<br>
+        <span class="a">↓</span> ImageNet Normalise<br>
+        <span class="a">↓</span> ResNet50 (pretrained)<br>
+        <span class="a">↓</span> Forensic Analysis<br>
+        <span class="s">↓ GRAD-CAM + CLASS</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <span class="arch-icon">🎤</span>
+      <h3>Audio Module</h3>
+      <p>Librosa MFCC extraction (40 coefficients) + pitch, spectral contrast, ZCR, RMS energy. CNN classifier distinguishes real, AI-synthesised, and cloned voices.</p>
+      <div class="pipe">
+        <span class="s">INPUT AUDIO</span><br>
+        <span class="a">↓</span> Librosa Load (22050 Hz)<br>
+        <span class="a">↓</span> MFCC 40-coeff Extract<br>
+        <span class="a">↓</span> Pitch + Spectral Feats<br>
+        <span class="a">↓</span> AudioCNN Classifier<br>
+        <span class="s">↓ VOICE CLASS + MFCC VIZ</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <span class="arch-icon">🎬</span>
+      <h3>Video Module</h3>
+      <p>Extracts 16 evenly-spaced frames. Haar-cascade face detection. CNN frame-level analysis + temporal inconsistency metrics (flicker, drift, pixel diff) for deepfake detection.</p>
+      <div class="pipe">
+        <span class="s">INPUT VIDEO</span><br>
+        <span class="a">↓</span> Frame Extract ×16<br>
+        <span class="a">↓</span> Face Detection (Haar)<br>
+        <span class="a">↓</span> CNN Frame Analysis<br>
+        <span class="a">↓</span> Temporal Inconsistency<br>
+        <span class="s">↓ DEEPFAKE VERDICT</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <span class="arch-icon">🧠</span>
+      <h3>Explainability (XAI)</h3>
+      <p>Every prediction is explained. Grad-CAM heatmaps for images, stylometric radar charts for text, MFCC spectrograms for audio, frame grids for video. Full PDF report generation.</p>
+      <div class="pipe">
+        <span class="s">PREDICTION</span><br>
+        <span class="a">↓</span> Text → Stylometric XAI<br>
+        <span class="a">↓</span> Image → Grad-CAM<br>
+        <span class="a">↓</span> Audio → MFCC Viz<br>
+        <span class="a">↓</span> Video → Frame Grid<br>
+        <span class="s">↓ PDF REPORT</span>
+      </div>
+    </div>
+    <div class="arch-card">
+      <span class="arch-icon">🛠</span>
+      <h3>Tech Stack</h3>
+      <p>Full Python research stack — modular, extensible, and designed for viva demonstration and IEEE-style paper writing.</p>
+      <div class="pipe">
+        <span class="s">Backend:</span>   Flask + Python<br>
+        <span class="s">DL:</span>       PyTorch 2.1<br>
+        <span class="s">NLP:</span>      HuggingFace Transformers<br>
+        <span class="s">CV:</span>       OpenCV + torchvision<br>
+        <span class="s">Audio:</span>    Librosa<br>
+        <span class="s">Reports:</span>  ReportLab PDF<br>
+        <span class="s">Viz:</span>      Matplotlib + Seaborn
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="wrap foot-inner">
+    <span class="fmono">VERITAS AI // EXPLAINABLE MULTIMODAL DETECTION // RESEARCH PROJECT</span>
+    <span class="fmono">DistilBERT · ResNet50 · Grad-CAM · MFCC · OpenCV</span>
+  </div>
+</footer>
+
+<script>
+/*══════════════════════════════════════════════════════
+  VERITAS AI — Frontend Logic
+══════════════════════════════════════════════════════*/
+
+const API = '';
+let lastResult = {};
+
+// ── tabs ─────────────────────────────────────────────
+function tab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
+  document.getElementById('pn-'+name).classList.add('on');
+  document.getElementById('tb-'+name).classList.add('on');
+}
+
+// ── char count ───────────────────────────────────────
+function cc() {
+  document.getElementById('cc-val').textContent = document.getElementById('txt').value.length;
+}
+
+// ── drag-drop ────────────────────────────────────────
+function dov(e, id) { e.preventDefault(); document.getElementById(id).classList.add('hover'); }
+function dol(id)    { document.getElementById(id).classList.remove('hover'); }
+function dop(e, fid, did) {
+  e.preventDefault(); dol(did);
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  const inp = document.getElementById(fid);
+  const dt  = new DataTransfer(); dt.items.add(f); inp.files = dt.files;
+  inp.dispatchEvent(new Event('change'));
+}
+function fsel(fid, nid, pvid) {
+  const f = document.getElementById(fid).files[0]; if (!f) return;
+  document.getElementById(nid).textContent = '✓ ' + f.name;
+  const mod = fid.split('-')[1];
+  const b   = document.getElementById('btn-'+mod); if (b) b.disabled = false;
+  if (pvid && f.type.startsWith('image/')) {
+    const r = new FileReader();
+    r.onload = e => { const img = document.getElementById(pvid); img.src = e.target.result; img.style.display = 'block'; };
+    r.readAsDataURL(f);
+  }
+}
+
+// ── loading state ────────────────────────────────────
+function setLoad(mod, on) {
+  document.getElementById('lov-'+mod).classList[on?'add':'remove']('on');
+  const b = document.getElementById('btn-'+mod);
+  b.classList[on?'add':'remove']('loading');
+  b.disabled = on;
+}
+
+// ── label → css class ────────────────────────────────
+function cls(label) {
+  const l = label.toLowerCase();
+  if (l.includes('human') || l.includes('real')) return 'human';
+  if (l.includes('fake') || l.includes('manip'))  return 'fake';
+  if (l.includes('deep') || l.includes('clone'))  return 'deep';
+  return 'ai';
+}
+function barCls(label) {
+  const l = label.toLowerCase();
+  if (l.includes('human') || l.includes('real'))  return 'real';
+  if (l.includes('ai') || l.includes('generated'))return 'ai';
+  if (l.includes('fake'))  return 'fake';
+  if (l.includes('clone')) return 'clone';
+  if (l.includes('manip')) return 'manip';
+  if (l.includes('deep'))  return 'deep';
+  return 'ai';
+}
+
+// ── build result HTML ─────────────────────────────────
+const FEAT_KEY = {text:'stylometric_features',image:'forensic_analysis',audio:'audio_features',video:'temporal_analysis'};
+
+function buildResult(r, mod) {
+  const c    = cls(r.label);
+  const risk = r.risk_level || 'Low';
+  const conf = r.confidence || 0;
+  const accentVar = {human:'--green',ai:'--violet2',fake:'--coral',deep:'--yellow'}[c] || '--violet2';
+
+  let h = `
+    <div class="verdict ${c}">
+      <div>
+        <div class="vlabel ${c}">${r.label}</div>
+        <div class="rbadge ${risk}">${risk} Risk</div>
+      </div>
+      <div style="text-align:right">
+        <div class="cpill" style="color:var(${accentVar})">${conf}%</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:4px">confidence</div>
+      </div>
+    </div>`;
+
+  // Score bars
+  if (r.scores) {
+    h += '<div style="margin:14px 0">';
+    for (const [lbl, val] of Object.entries(r.scores)) {
+      h += `<div class="srow">
+        <span class="sname">${lbl}</span>
+        <div class="strack"><div class="sfill ${barCls(lbl)}" data-w="${val}"></div></div>
+        <span class="sval">${val}%</span>
+      </div>`;
+    }
+    h += '</div>';
+  }
+
+  // Feature grid
+  const feats = r[FEAT_KEY[mod]];
+  if (feats && Object.keys(feats).length) {
+    h += `<div class="clabel" style="margin-top:14px">Feature Analysis</div><div class="fgrid">`;
+    Object.entries(feats).slice(0,6).forEach(([k,v]) => {
+      h += `<div class="fitem"><div class="fkey">${k.replace(/_/g,' ')}</div><div class="fval">${typeof v==='number'?v.toFixed(4):v}</div></div>`;
+    });
+    h += '</div>';
+  }
+
+  // Explanation
+  if (r.explanation?.length) {
+    h += `<div class="clabel" style="margin-top:14px">Explainability</div>`;
+    r.explanation.forEach((e,i) => {
+      h += `<div class="expl" style="animation-delay:${i*.08}s">${e}</div>`;
+    });
+  }
+
+  h += `<button class="dl-btn" onclick="dlReport('${mod}')">📄 DOWNLOAD PDF REPORT</button>`;
+  return h;
+}
+
+// ── animate score bars ────────────────────────────────
+function animBars() {
+  setTimeout(() => {
+    document.querySelectorAll('.sfill[data-w]').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  }, 120);
+}
+
+// ── render plots ──────────────────────────────────────
+const PNAMES = {
+  confidence:'📊 Confidence', radar:'🕸 Radar', sent_lengths:'📏 Sentences',
+  word_freq:'📖 Vocab', dashboard:'🖥 Dashboard',
+  gradcam_heatmap:'🌡 Grad-CAM', spectrogram_b64:'🎵 Spectrogram',
+  mfcc_plot_b64:'📈 MFCC', frame_grid_b64:'🎬 Frames',
+};
+
+function renderPlots(plots, mod) {
+  const card = document.getElementById('plt-'+mod);
+  const tabs = document.getElementById('pt-'+mod);
+  const pane = document.getElementById('pp-'+mod);
+  if (!plots || !Object.keys(plots).length) return;
+  card.classList.add('on');
+  if (tabs) tabs.innerHTML = '';
+  pane.innerHTML = '';
+
+  let first = true;
+  for (const [key, b64] of Object.entries(plots)) {
+    if (!b64) continue;
+    const name   = PNAMES[key] || key;
+    const paneId = `pp-${mod}-${key}`;
+
+    if (tabs) {
+      tabs.innerHTML += `<button class="ptab ${first?'on':''}" onclick="switchPlt('${mod}','${paneId}',this)">${name}</button>`;
+    }
+    pane.innerHTML += `<div class="ppane ${first?'on':''}" id="${paneId}">
+      <img class="plot-img" src="data:image/png;base64,${b64}" alt="${name}">
+    </div>`;
+    first = false;
+  }
+}
+
+function switchPlt(mod, paneId, btn) {
+  document.querySelectorAll(`#pp-${mod} .ppane`).forEach(p => p.classList.remove('on'));
+  document.getElementById(paneId).classList.add('on');
+  document.querySelectorAll(`#plt-${mod} .ptab`).forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+// ══ TEXT ANALYSE ══════════════════════════════════════
+async function doText() {
+  const text = document.getElementById('txt').value.trim();
+  if (text.length < 20) { alert('Please enter at least 20 characters.'); return; }
+  setLoad('text', true);
+  try {
+    const res  = await fetch(`${API}/api/analyze/text`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text})
+    });
+    const data = await res.json();
+    if (data.error) { alert('Error: '+data.error); return; }
+    lastResult.text = data;
+    document.getElementById('res-text').innerHTML = buildResult(data,'text');
+    animBars();
+    // Merge inline plots
+    const allPlots = {...(data.plots||{})};
+    ['gradcam_heatmap','spectrogram_b64','mfcc_plot_b64','frame_grid_b64'].forEach(k=>{ if(data[k]) allPlots[k]=data[k]; });
+    renderPlots(allPlots,'text');
+  } catch(e) {
+    alert('Connection error: '+e.message+'\n\nMake sure the Flask server is running:\n  python app.py');
+  } finally { setLoad('text',false); }
+}
+
+// ══ FILE ANALYSE (image/audio/video) ══════════════════
+async function doFile(mod) {
+  const inp = document.getElementById('fi-'+mod);
+  if (!inp.files[0]) { alert('Please select a file first.'); return; }
+  setLoad(mod, true);
+  try {
+    const form = new FormData();
+    form.append('file', inp.files[0]);
+    const res  = await fetch(`${API}/api/analyze/${mod}`, {method:'POST',body:form});
+    const data = await res.json();
+    if (data.error) { alert('Error: '+data.error); return; }
+    lastResult[mod] = data;
+    document.getElementById('res-'+mod).innerHTML = buildResult(data, mod);
+    animBars();
+    const allPlots = {...(data.plots||{})};
+    ['gradcam_heatmap','spectrogram_b64','mfcc_plot_b64','frame_grid_b64'].forEach(k=>{ if(data[k]) allPlots[k]=data[k]; });
+    renderPlots(allPlots, mod);
+  } catch(e) {
+    alert('Connection error: '+e.message+'\n\nMake sure the Flask server is running:\n  python app.py');
+  } finally { setLoad(mod,false); }
+}
+
+// ══ PDF REPORT ════════════════════════════════════════
+async function dlReport(mod) {
+  const result = lastResult[mod];
+  if (!result) { alert('No analysis result found. Run an analysis first.'); return; }
+
+  const plots = [];
+  document.querySelectorAll(`#pp-${mod} img.plot-img`).forEach(img => {
+    const b64 = img.src.replace('data:image/png;base64,','');
+    if (b64) plots.push(b64);
+  });
+
+  const filename = document.getElementById('fi-'+mod)?.files[0]?.name || 'input';
+  try {
+    const res = await fetch(`${API}/api/report`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({result, modality:mod, filename, plots:plots.slice(0,4)})
+    });
+    if (!res.ok) { alert('Report generation failed. Check server logs.'); return; }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href=url; a.download=`veritas_report_${mod}.pdf`; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { alert('Report error: '+e.message); }
+}
+
+// ── keyboard shortcut ─────────────────────────────────
+document.getElementById('txt').addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') doText();
+});
+</script>
+</body>
+</html>
