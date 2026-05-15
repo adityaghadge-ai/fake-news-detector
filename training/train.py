@@ -391,7 +391,7 @@ def _make_demo_text_df():
 #  MODULE 2 — IMAGE MODEL TRAINING
 # ══════════════════════════════════════════════════════════════════════════════
 
-def train_image(epochs=20, batch_size=32, lr=1e-3):
+def train_image(epochs=10, batch_size=8, lr=1e-3):
     banner("IMAGE MODEL TRAINING  —  ResNet50 Fine-tuning")
 
     try:
