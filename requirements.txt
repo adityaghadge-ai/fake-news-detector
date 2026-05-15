@@ -1,7 +1,6 @@
 flask==2.3.3
 flask-cors==4.0.0
-torch==2.1.0
-torchvision==0.16.0
+
 transformers==4.35.0
 librosa==0.10.1
 opencv-python-headless==4.8.1.78
