@@ -1,37 +1,42 @@
 """
-VERITAS AI — Flask Backend
-==========================
+VERITAS AI — Flask Backend with Authentication
+===============================================
 Routes:
-  GET  /                     → Main UI
-  POST /api/analyze/text     → Text analysis
-  POST /api/analyze/image    → Image analysis
-  POST /api/analyze/audio    → Audio analysis
-  POST /api/analyze/video    → Video analysis
-  POST /api/report           → PDF report download
-  GET  /api/health           → Health check
+  GET/POST /login      Login + Register page
+  POST     /register   Process registration
+  GET      /logout     Logout
+  GET      /dashboard  User dashboard + history
+  GET      /           Main detector UI (login required)
+  POST     /api/analyze/text|image|audio|video
+  POST     /api/report
+  GET      /api/health
 """
 
-import os
-import sys
-import json
-import tempfile
-import traceback
+import os, sys, tempfile, traceback
 from pathlib import Path
 
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import (Flask, request, jsonify, render_template,
+                   send_file, session, redirect, url_for, flash)
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
-# ── path setup ─────────────────────────────────────────────────
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT))
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'veritas-ai-dev-secret-key-2024')
 CORS(app)
-app.config['MAX_CONTENT_LENGTH'] = 300 * 1024 * 1024   # 300 MB
-app.config['UPLOAD_FOLDER']      = tempfile.gettempdir()
+app.config['MAX_CONTENT_LENGTH'] = 300 * 1024 * 1024
 
-# ── lazy-load analyzers (avoids long cold-start) ───────────────
+from auth import (init_db, close_db, login_required, current_user,
+                  register_user, login_user, get_user_history,
+                  get_user_stats, save_analysis)
+
+with app.app_context():
+    init_db()
+
+app.teardown_appcontext(close_db)
+
 _analyzers = {}
 
 def get(name):
@@ -51,156 +56,248 @@ def get(name):
     return _analyzers[name]
 
 
-# ────────────────────────────────────────────────────────────────
-#  HELPER — generate all plots for a result
-# ────────────────────────────────────────────────────────────────
-def build_plots(result: dict, modality: str, raw_text: str = "") -> dict:
+def build_plots(result, modality, raw_text=''):
     from visualization.visualizer import (
         plot_confidence, plot_dashboard,
         plot_stylometric_radar, plot_sentence_lengths, plot_word_freq,
     )
     plots = {}
-    plots["confidence"] = plot_confidence(result.get("scores", {}),
-                                           f"{modality.title()} Classification Confidence")
-    plots["dashboard"]  = plot_dashboard(result, modality)
-
-    if modality == "text" and raw_text:
-        plots["radar"]        = plot_stylometric_radar(result.get("stylometric_features", {}))
-        plots["sent_lengths"] = plot_sentence_lengths(raw_text)
-        plots["word_freq"]    = plot_word_freq(raw_text)
+    plots['confidence'] = plot_confidence(result.get('scores', {}),
+                                           f'{modality.title()} Confidence')
+    plots['dashboard']  = plot_dashboard(result, modality)
+    if modality == 'text' and raw_text:
+        plots['radar']        = plot_stylometric_radar(result.get('stylometric_features', {}))
+        plots['sent_lengths'] = plot_sentence_lengths(raw_text)
+        plots['word_freq']    = plot_word_freq(raw_text)
     return plots
 
 
-# ────────────────────────────────────────────────────────────────
-#  ROUTES
-# ────────────────────────────────────────────────────────────────
+@app.context_processor
+def inject_user():
+    return {'current_user': current_user()}
+
+
+# ── AUTH ROUTES ───────────────────────────────────────────────
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'user_id' in session:
+        return redirect(url_for('index'))
+
+    mode = request.args.get('mode', 'login')
+
+    if request.method == 'POST':
+        form_type = request.form.get('form_type', 'login')
+
+        if form_type == 'login':
+            ue       = request.form.get('username_or_email', '').strip()
+            password = request.form.get('password', '')
+            if not ue or not password:
+                flash('Please fill in all fields.', 'error')
+                return render_template('login.html', mode='login')
+            success, message, user = login_user(ue, password)
+            if success:
+                session.permanent = True
+                session['user_id']  = user['id']
+                session['username'] = user['username']
+                flash(f'Welcome back, {user["username"]}!', 'success')
+                nxt = request.args.get('next', url_for('index'))
+                return redirect(nxt)
+            else:
+                flash(message, 'error')
+                return render_template('login.html', mode='login')
+
+    return render_template('login.html', mode=mode)
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    username  = request.form.get('username', '').strip()
+    email     = request.form.get('email', '').strip()
+    password  = request.form.get('password', '')
+    confirm   = request.form.get('confirm_password', '')
+    agree     = request.form.get('agree')
+
+    if not agree:
+        flash('You must agree to the Terms of Use.', 'error')
+        return render_template('login.html', mode='register')
+    if password != confirm:
+        flash('Passwords do not match.', 'error')
+        return render_template('login.html', mode='register')
+
+    success, message = register_user(username, email, password)
+    if success:
+        _, _, user = login_user(username, password)
+        if user:
+            session['user_id']  = user['id']
+            session['username'] = user['username']
+            flash(f'Welcome to VERITAS AI, {username}!', 'success')
+            return redirect(url_for('index'))
+    else:
+        flash(message, 'error')
+        return render_template('login.html', mode='register')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('You have been logged out successfully.', 'success')
+    return redirect(url_for('login'))
+
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    user    = current_user()
+    history = get_user_history(session['user_id'], limit=15)
+    stats   = get_user_stats(session['user_id'])
+    return render_template('dashboard.html', user=user, history=history, stats=stats)
+
+
+@app.route('/forgot')
+def forgot():
+    flash('Password reset is not available in this demo. Contact your admin.', 'error')
+    return redirect(url_for('login'))
+
+
+# ── MAIN ROUTE ────────────────────────────────────────────────
 
 @app.route('/')
+@login_required
 def index():
-    return render_template('index.html')
+    return render_template('index.html', user=current_user())
 
+
+# ── ANALYSIS API ──────────────────────────────────────────────
 
 @app.route('/api/analyze/text', methods=['POST'])
+@login_required
 def analyze_text():
     try:
         data = request.get_json(force=True)
         text = (data.get('text') or '').strip()
         if len(text) < 20:
-            return jsonify({"error": "Text must be at least 20 characters."}), 400
-
-        result         = get('text').analyze(text)
-        result["plots"] = build_plots(result, "text", raw_text=text)
+            return jsonify({'error': 'Text must be at least 20 characters.'}), 400
+        result = get('text').analyze(text)
+        result['plots'] = build_plots(result, 'text', raw_text=text)
+        save_analysis(session['user_id'], 'text', result.get('label','?'),
+                      result.get('confidence',0), result.get('risk_level','Low'),
+                      f'{len(text)} chars')
         return jsonify(result)
-
     except Exception:
         traceback.print_exc()
-        return jsonify({"error": "Text analysis failed. Check server logs."}), 500
+        return jsonify({'error': 'Text analysis failed.'}), 500
 
 
 @app.route('/api/analyze/image', methods=['POST'])
+@login_required
 def analyze_image():
+    tmp = None
     try:
-        if 'file' not in request.files or request.files['file'].filename == '':
-            return jsonify({"error": "No image file received."}), 400
-
-        f      = request.files['file']
-        suffix = Path(secure_filename(f.filename)).suffix or '.jpg'
-        tmp    = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        if 'file' not in request.files or not request.files['file'].filename:
+            return jsonify({'error': 'No image file received.'}), 400
+        f   = request.files['file']
+        sfx = Path(secure_filename(f.filename)).suffix or '.jpg'
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=sfx)
         f.save(tmp.name)
-
-        result          = get('image').analyze(tmp.name)
-        result["plots"] = build_plots(result, "image")
-        try:
-            os.unlink(tmp.name)
-        except Exception:
-            pass
+        result = get('image').analyze(tmp.name)
+        result['plots'] = build_plots(result, 'image')
+        save_analysis(session['user_id'], 'image', result.get('label','?'),
+                      result.get('confidence',0), result.get('risk_level','Low'),
+                      secure_filename(f.filename))
         return jsonify(result)
-
     except Exception:
         traceback.print_exc()
-        return jsonify({"error": "Image analysis failed. Check server logs."}), 500
+        return jsonify({'error': 'Image analysis failed.'}), 500
+    finally:
+        if tmp is not None:
+            try:
+                tmp.close()
+            except:
+                pass
+            try:
+                os.unlink(tmp.name)
+            except:
+                pass
 
 
 @app.route('/api/analyze/audio', methods=['POST'])
+@login_required
 def analyze_audio():
     try:
-        if 'file' not in request.files or request.files['file'].filename == '':
-            return jsonify({"error": "No audio file received."}), 400
-
-        f      = request.files['file']
-        suffix = Path(secure_filename(f.filename)).suffix or '.wav'
-        tmp    = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        if 'file' not in request.files or not request.files['file'].filename:
+            return jsonify({'error': 'No audio file received.'}), 400
+        f   = request.files['file']
+        sfx = Path(secure_filename(f.filename)).suffix or '.wav'
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=sfx)
         f.save(tmp.name)
-
-        result          = get('audio').analyze(tmp.name)
-        result["plots"] = build_plots(result, "audio")
+        result = get('audio').analyze(tmp.name)
+        result['plots'] = build_plots(result, 'audio')
         os.unlink(tmp.name)
+        save_analysis(session['user_id'], 'audio', result.get('label','?'),
+                      result.get('confidence',0), result.get('risk_level','Low'),
+                      secure_filename(f.filename))
         return jsonify(result)
-
     except Exception:
         traceback.print_exc()
-        return jsonify({"error": "Audio analysis failed. Check server logs."}), 500
+        return jsonify({'error': 'Audio analysis failed.'}), 500
 
 
 @app.route('/api/analyze/video', methods=['POST'])
+@login_required
 def analyze_video():
     try:
-        if 'file' not in request.files or request.files['file'].filename == '':
-            return jsonify({"error": "No video file received."}), 400
-
-        f      = request.files['file']
-        suffix = Path(secure_filename(f.filename)).suffix or '.mp4'
-        tmp    = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        if 'file' not in request.files or not request.files['file'].filename:
+            return jsonify({'error': 'No video file received.'}), 400
+        f   = request.files['file']
+        sfx = Path(secure_filename(f.filename)).suffix or '.mp4'
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=sfx)
         f.save(tmp.name)
-
-        result          = get('video').analyze(tmp.name)
-        result["plots"] = build_plots(result, "video")
+        result = get('video').analyze(tmp.name)
+        result['plots'] = build_plots(result, 'video')
         os.unlink(tmp.name)
+        save_analysis(session['user_id'], 'video', result.get('label','?'),
+                      result.get('confidence',0), result.get('risk_level','Low'),
+                      secure_filename(f.filename))
         return jsonify(result)
-
     except Exception:
         traceback.print_exc()
-        return jsonify({"error": "Video analysis failed. Check server logs."}), 500
+        return jsonify({'error': 'Video analysis failed.'}), 500
 
 
 @app.route('/api/report', methods=['POST'])
+@login_required
 def generate_report():
     try:
-        data      = request.get_json(force=True)
-        result    = data.get("result", {})
-        modality  = data.get("modality", "text")
-        filename  = data.get("filename", "input")
-        plots     = data.get("plots", [])
-
+        data     = request.get_json(force=True)
+        result   = data.get('result', {})
+        modality = data.get('modality', 'text')
+        filename = data.get('filename', 'input')
+        plots    = data.get('plots', [])
         from reporting.report_generator import ReportGenerator
         pdf_bytes = ReportGenerator().generate(result, modality, plots, filename)
-
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
         tmp.write(pdf_bytes); tmp.close()
-
-        return send_file(
-            tmp.name,
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name=f'veritas_report_{modality}.pdf',
-        )
+        return send_file(tmp.name, mimetype='application/pdf',
+                         as_attachment=True,
+                         download_name=f'veritas_report_{modality}.pdf')
     except Exception:
         traceback.print_exc()
-        return jsonify({"error": "Report generation failed. Check server logs."}), 500
+        return jsonify({'error': 'Report generation failed.'}), 500
 
 
 @app.route('/api/health')
 def health():
-    return jsonify({"status": "ok", "version": "1.0", "name": "VERITAS AI"})
+    u = current_user()
+    return jsonify({'status':'ok','authenticated': u is not None,
+                    'user': u['username'] if u else None})
 
 
-# ────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    banner = """
+    print("""
   ╔══════════════════════════════════════════════╗
-  ║   VERITAS AI — Fake & AI Content Detector   ║
+  ║   VERITAS AI — With Authentication           ║
   ║   http://127.0.0.1:5000                      ║
   ╚══════════════════════════════════════════════╝
-    """
-    print(banner)
+    """)
     app.run(debug=True, port=5000, host='0.0.0.0')

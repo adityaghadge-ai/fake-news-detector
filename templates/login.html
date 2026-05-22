@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERITAS AI — {% if mode == 'register' %}Create Account{% else %}Sign In{% endif %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080b14;--surface:#0e1220;--card:#111525;
+  --border:#1c2235;--border2:#252d45;
+  --violet:#7c6ff7;--violet2:#a09aff;
+  --coral:#ff6b6b;--green:#3ae8a0;--yellow:#ffd166;--cyan:#00d4ff;
+  --text:#dde1f0;--text2:#8590ab;--text3:#4e566a;
+  --mono:'Space Mono',monospace;--sans:'Outfit',sans-serif;
+}
+html,body{min-height:100%}
+body{
+  font-family:var(--sans);background:var(--bg);color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:20px;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(124,111,247,.025) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(124,111,247,.025) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:.15;animation:orb 14s ease-in-out infinite}
+.o1{width:500px;height:500px;background:var(--violet);top:-180px;left:-180px}
+.o2{width:400px;height:400px;background:var(--coral);bottom:-120px;right:-120px;animation-delay:-7s}
+.o3{width:280px;height:280px;background:var(--cyan);top:50%;left:55%;animation-delay:-3s}
+@keyframes orb{0%,100%{transform:translateY(0)}50%{transform:translateY(-28px)}}
+.card{
+  position:relative;z-index:1;width:100%;max-width:450px;
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:38px 38px 32px;box-shadow:0 28px 80px rgba(0,0,0,.6);
+  animation:rise .45s ease both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.logo-box{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--violet),var(--cyan));display:grid;place-items:center;font-size:17px;box-shadow:0 0 20px rgba(124,111,247,.4)}
+.logo-name{font-size:17px;font-weight:900;letter-spacing:2px}
+.logo-name span{color:var(--violet2)}
+.logo-badge{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--green);border:1px solid rgba(58,232,160,.35);padding:2px 8px;border-radius:4px}
+.tabs{display:flex;background:var(--surface);border-radius:8px;padding:4px;margin-bottom:26px;border:1px solid var(--border)}
+.tab{flex:1;text-align:center;padding:9px;border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--text3);text-decoration:none;display:block;transition:all .2s}
+.tab.on{background:var(--violet);color:#fff;box-shadow:0 0 14px rgba(124,111,247,.4)}
+.tab:hover:not(.on){color:var(--text2)}
+.auth-title{font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:5px}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.65}
+.flashes{margin-bottom:16px}
+.flash{padding:11px 14px;border-radius:7px;font-size:13px;display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;line-height:1.5}
+.flash.error{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);color:#ff9898}
+.flash.success{background:rgba(58,232,160,.1);border:1px solid rgba(58,232,160,.3);color:#3ae8a0}
+.field{margin-bottom:15px}
+.field label{display:block;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:7px}
+.field input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,111,247,.12)}
+.field input::placeholder{color:var(--text3)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:44px}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px;transition:color .2s;line-height:1}
+.pw-eye:hover{color:var(--text2)}
+.pw-strength{margin-top:6px;height:3px;border-radius:2px;background:var(--border);overflow:hidden}
+.pw-bar{height:100%;border-radius:2px;width:0;transition:width .3s,background .3s}
+.pw-hint{font-size:10px;color:var(--text3);margin-top:5px;font-family:var(--mono)}
+.check-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:18px}
+.check-row input[type=checkbox]{width:16px;height:16px;margin-top:3px;flex-shrink:0;accent-color:var(--violet);cursor:pointer}
+.check-row label{font-size:12px;color:var(--text2);line-height:1.55;cursor:pointer}
+.check-row a{color:var(--violet2);text-decoration:none}
+.forgot{text-align:right;margin-top:-8px;margin-bottom:16px}
+.forgot a{font-size:12px;color:var(--text3);text-decoration:none;transition:color .2s}
+.forgot a:hover{color:var(--violet2)}
+.btn-submit{width:100%;padding:13px;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,var(--violet),#5048c8);font-family:var(--mono);font-size:11px;letter-spacing:2px;color:#fff;font-weight:700;text-transform:uppercase;transition:all .2s;box-shadow:0 0 20px rgba(124,111,247,.35);margin-top:4px}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(124,111,247,.5)}
+.btn-submit:active{transform:none}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.divider span{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px}
+.auth-footer{text-align:center;margin-top:18px;font-size:12px;color:var(--text3)}
+.auth-footer a{color:var(--violet2);text-decoration:none}
+.auth-footer a:hover{text-decoration:underline}
+.info-box{background:rgba(124,111,247,.07);border:1px solid rgba(124,111,247,.2);border-radius:8px;padding:11px 14px;margin-bottom:18px;font-size:12px;color:var(--text2);line-height:1.6}
+.info-box strong{color:var(--violet2)}
+</style>
+</head>
+<body>
+<div class="orb o1"></div>
+<div class="orb o2"></div>
+<div class="orb o3"></div>
+<div class="card">
+  <div class="logo">
+    <div class="logo-box">🔍</div>
+    <span class="logo-name">VERITAS<span> AI</span></span>
+    <span class="logo-badge">SECURE</span>
+  </div>
+  <div class="tabs">
+    <a href="/login?mode=login"    class="tab {% if mode != 'register' %}on{% endif %}">SIGN IN</a>
+    <a href="/login?mode=register" class="tab {% if mode == 'register' %}on{% endif %}">REGISTER</a>
+  </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flashes">
+      {% for cat, msg in messages %}
+      <div class="flash {{ cat }}">
+        <span>{% if cat=='error' %}⚠{% else %}✓{% endif %}</span>
+        <span>{{ msg }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  {% if mode != 'register' %}
+  <div class="auth-title">Welcome back</div>
+  <div class="auth-sub">Sign in to your VERITAS AI research account.</div>
+  <form method="POST" action="/login" autocomplete="on">
+    <input type="hidden" name="form_type" value="login">
+    <div class="field">
+      <label>Username or Email</label>
+      <input type="text" name="username_or_email" placeholder="Enter username or email" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <div class="pw-wrap">
+        <input type="password" name="password" id="pw1" placeholder="Enter your password" autocomplete="current-password" required>
+        <button type="button" class="pw-eye" onclick="tpw('pw1',this)">👁</button>
+      </div>
+    </div>
+    <div class="forgot"><a href="/forgot">Forgot password?</a></div>
+    <button type="submit" class="btn-submit">⚡ SIGN IN</button>
+  </form>
+  <div class="divider"><span>NEW HERE?</span></div>
+  <div class="auth-footer">Don't have an account? <a href="/login?mode=register">Create one free →</a></div>
+
+  {% else %}
+  <div class="auth-title">Create account</div>
+  <div class="auth-sub">Join VERITAS AI to detect fake and AI-generated content.</div>
+  <div class="info-box"><strong>Free research account</strong> — unlimited analyses across all modalities. History saved to your personal dashboard.</div>
+  <form method="POST" action="/register" autocomplete="on">
+    <div class="field-row">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="e.g. jsmith" autocomplete="username" minlength="3" maxlength="30" required>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="you@email.com" autocomplete="email" required>
+      </div>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <div class="pw-wrap">
+        <input type="password" name="password" id="pw2" placeholder="Min. 6 characters" autocomplete="new-password" minlength="6" required oninput="strength(this.value)">
+        <button type="button" class="pw-eye" onclick="tpw('pw2',this)">👁</button>
+      </div>
+      <div class="pw-strength"><div class="pw-bar" id="pb"></div></div>
+      <div class="pw-hint" id="ph">Enter a password</div>
+    </div>
+    <div class="field">
+      <label>Confirm Password</label>
+      <div class="pw-wrap">
+        <input type="password" name="confirm_password" id="pw3" placeholder="Repeat password" autocomplete="new-password" minlength="6" required>
+        <button type="button" class="pw-eye" onclick="tpw('pw3',this)">👁</button>
+      </div>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" name="agree" id="agree" required>
+      <label for="agree">I agree to the <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a> of VERITAS AI.</label>
+    </div>
+    <button type="submit" class="btn-submit">🚀 CREATE ACCOUNT</button>
+  </form>
+  <div class="divider"><span>HAVE ACCOUNT?</span></div>
+  <div class="auth-footer">Already registered? <a href="/login?mode=login">Sign in →</a></div>
+  {% endif %}
+</div>
+<script>
+function tpw(id,btn){
+  const i=document.getElementById(id);
+  i.type=i.type==='password'?'text':'password';
+  btn.textContent=i.type==='password'?'👁':'🙈';
+}
+function strength(pw){
+  const b=document.getElementById('pb'),h=document.getElementById('ph');
+  let s=0;
+  if(pw.length>=6)s++;if(pw.length>=10)s++;
+  if(/[A-Z]/.test(pw))s++;if(/[0-9]/.test(pw))s++;if(/[^A-Za-z0-9]/.test(pw))s++;
+  const m=['','Weak','Fair','Good','Strong','Very Strong'];
+  const c=['','#ff6b6b','#ffd166','#00d4ff','#3ae8a0','#3ae8a0'];
+  b.style.width=(s/5*100)+'%';b.style.background=c[s]||'#ff6b6b';
+  h.textContent=m[s]||'Enter a password';h.style.color=c[s]||'#4e566a';
+}
+</script>
+</body>
+</html>

@@ -310,13 +310,26 @@ footer{border-top:1px solid var(--border);padding:22px 0;position:relative;z-ind
       <span class="logo-name">VERITAS<span> AI</span></span>
       <span class="logo-badge">RESEARCH v1.0</span>
     </div>
-    <div class="hdr-tags">
-      <span class="htag">DistilBERT</span>
-      <span class="htag">ResNet50</span>
-      <span class="htag">Grad-CAM</span>
-      <span class="htag">XAI</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="hdr-tags">
+        <span class="htag">DistilBERT</span>
+        <span class="htag">ResNet50</span>
+        <span class="htag">Grad-CAM</span>
+      </div>
+      {% if current_user %}
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:6px">{{ current_user.username }}</span>
+      <a href="/dashboard" style="font-family:var(--mono);font-size:9.5px;letter-spacing:1px;padding:6px 13px;border-radius:6px;color:var(--text2);border:1px solid var(--border2);text-decoration:none">📊 Dashboard</a>
+      <a href="/logout" style="font-family:var(--mono);font-size:9.5px;letter-spacing:1px;padding:6px 13px;border-radius:6px;color:var(--coral);border:1px solid rgba(255,107,107,.3);text-decoration:none">⏏ Logout</a>
+      {% endif %}
     </div>
   </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div style="background:rgba(58,232,160,.07);border-top:1px solid rgba(58,232,160,.15);padding:8px 24px">
+      {% for cat, msg in messages %}<div style="font-size:13px;color:#3ae8a0">✓ {{ msg }}</div>{% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
 </header>
 
 <!-- ══ HERO ══ -->

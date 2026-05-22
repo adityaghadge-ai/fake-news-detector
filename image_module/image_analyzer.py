@@ -130,11 +130,13 @@ class ForensicAnalyzer:
 
         edges = cv2.Canny(
             gray,
-            50,
-            150
+            30,
+            100
         )
 
-        return float(edges.mean())
+        density = np.sum(edges > 0) / edges.size
+
+        return float(density * 100)
 
     def texture_consistency(self, gray):
 
