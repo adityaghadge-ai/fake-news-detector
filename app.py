@@ -110,7 +110,10 @@ def analyze_image():
 
         result          = get('image').analyze(tmp.name)
         result["plots"] = build_plots(result, "image")
-        os.unlink(tmp.name)
+        try:
+            os.unlink(tmp.name)
+        except Exception:
+            pass
         return jsonify(result)
 
     except Exception:

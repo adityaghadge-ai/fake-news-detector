@@ -391,202 +391,216 @@ def _make_demo_text_df():
 #  MODULE 2 — IMAGE MODEL TRAINING
 # ══════════════════════════════════════════════════════════════════════════════
 
-def train_image(epochs=10, batch_size=8, lr=1e-3):
-    banner("IMAGE MODEL TRAINING  —  ResNet50 Fine-tuning")
+def train_image(epochs=5, batch_size=16, lr=1e-3):
+
+    banner("IMAGE MODEL TRAINING — MobileNetV2")
 
     try:
+
         import torch
         import torch.nn as nn
         import torchvision.models as models
         import torchvision.transforms as T
+
         from torch.utils.data import DataLoader
         from torchvision.datasets import ImageFolder
+
         from sklearn.metrics import classification_report
+
     except ImportError as e:
+
         err(f"Missing dependency: {e}")
+
         return
 
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     info(f"Device: {DEVICE}")
 
-    # ── check dataset ─────────────────────────────────────────────────────────
-    section("Checking Dataset")
     TRAIN_DIR = 'datasets/images/train'
-    VAL_DIR   = 'datasets/images/val'
+    VAL_DIR = 'datasets/images/val'
 
-    if not os.path.exists(TRAIN_DIR):
-        warn(f"Image dataset not found at {TRAIN_DIR}")
-        info("Expected folder structure:")
-        info("  datasets/images/train/real/         ← real images")
-        info("  datasets/images/train/ai/            ← AI-generated images")
-        info("  datasets/images/train/manipulated/   ← manipulated images")
-        info("  datasets/images/val/real/")
-        info("  datasets/images/val/ai/")
-        info("  datasets/images/val/manipulated/")
-        info("")
-        info("Recommended dataset: CIFAKE on Kaggle")
-        info("  kaggle datasets download -d birdy654/cifake-real-and-ai-generated-synthetic-images")
-        info("")
-        warn("Creating a tiny synthetic demo dataset from solid-color patches...")
-        _make_demo_image_dataset()
+    # =====================================================
+    # TRANSFORMS
+    # =====================================================
 
-    # ── transforms ────────────────────────────────────────────────────────────
-    section("Setting up Transforms")
     transform_train = T.Compose([
-        T.Resize((224, 224)),
-        T.RandomHorizontalFlip(p=0.5),
+
+        T.Resize((224,224)),
+
+        T.RandomHorizontalFlip(),
+
         T.RandomRotation(10),
-        T.ColorJitter(brightness=0.25, contrast=0.25, saturation=0.15),
-        T.RandomGrayscale(p=0.05),
+
         T.ToTensor(),
-        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+
+        T.Normalize(
+            [0.485,0.456,0.406],
+            [0.229,0.224,0.225]
+        )
     ])
+
     transform_val = T.Compose([
-        T.Resize((224, 224)),
+
+        T.Resize((224,224)),
+
         T.ToTensor(),
-        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+
+        T.Normalize(
+            [0.485,0.456,0.406],
+            [0.229,0.224,0.225]
+        )
     ])
 
-    # ── datasets ──────────────────────────────────────────────────────────────
-    section("Loading Image Datasets")
-    try:
-        train_ds = ImageFolder(TRAIN_DIR, transform=transform_train)
-        val_ds   = ImageFolder(VAL_DIR,   transform=transform_val)
-    except Exception as e:
-        err(f"Could not load image dataset: {e}")
-        return
+    # =====================================================
+    # DATASETS
+    # =====================================================
 
-    info(f"Train samples: {len(train_ds)}  |  Classes: {train_ds.classes}")
-    info(f"Val samples  : {len(val_ds)}")
-
-    # Class weights for imbalanced datasets
-    targets = [s[1] for s in train_ds.samples]
-    counts  = np.bincount(targets, minlength=len(train_ds.classes)).astype(float)
-    counts  = np.where(counts == 0, 1, counts)
-    weights = 1.0 / counts
-    sample_weights = torch.tensor([weights[t] for t in targets], dtype=torch.float)
-    sampler = torch.utils.data.WeightedRandomSampler(sample_weights, len(sample_weights))
-
-    train_loader = DataLoader(train_ds, batch_size=batch_size, sampler=sampler,
-                               num_workers=2, pin_memory=True)
-    val_loader   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False,
-                               num_workers=2, pin_memory=True)
-
-    # ── model ─────────────────────────────────────────────────────────────────
-    section("Building ResNet50")
-    model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-
-    # Freeze backbone layers 1-3, fine-tune layer4 + FC
-    for name, param in model.named_parameters():
-        if 'layer4' not in name and 'fc' not in name:
-            param.requires_grad = False
-
-    n_classes  = len(train_ds.classes)
-    model.fc   = nn.Sequential(
-        nn.Linear(2048, 512), nn.BatchNorm1d(512), nn.ReLU(), nn.Dropout(0.4),
-        nn.Linear(512, 128),  nn.ReLU(), nn.Dropout(0.2),
-        nn.Linear(128, n_classes),
+    train_ds = ImageFolder(
+        TRAIN_DIR,
+        transform=transform_train
     )
+
+    val_ds = ImageFolder(
+        VAL_DIR,
+        transform=transform_val
+    )
+
+    info(f"Classes: {train_ds.classes}")
+
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=batch_size,
+        shuffle=True
+    )
+
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=batch_size
+    )
+
+    # =====================================================
+    # MODEL
+    # =====================================================
+
+    model = models.mobilenet_v2(
+
+        weights=models.MobileNet_V2_Weights.DEFAULT
+    )
+
+    model.classifier = nn.Sequential(
+
+        nn.Dropout(0.3),
+
+        nn.Linear(
+            model.last_channel,
+            len(train_ds.classes)
+        )
+    )
+
     model = model.to(DEVICE)
 
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    info(f"Trainable parameters: {trainable:,}")
-
-    optimizer = torch.optim.AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=lr, weight_decay=1e-4
-    )
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer, max_lr=lr, steps_per_epoch=len(train_loader), epochs=epochs
-    )
     criterion = nn.CrossEntropyLoss()
 
-    # ── training loop ─────────────────────────────────────────────────────────
-    section(f"Training  ({epochs} epochs, batch={batch_size})")
-    best_val_acc = 0.0
-    train_losses, val_accs = [], []
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=lr
+    )
 
-    for epoch in range(1, epochs+1):
-        # ── train ──
+    best_acc = 0
+
+    train_losses = []
+    val_accs = []
+
+    # =====================================================
+    # TRAIN LOOP
+    # =====================================================
+
+    for epoch in range(epochs):
+
         model.train()
-        total_loss = correct = total = 0
+
+        running_loss = 0
+
+        correct = 0
+        total = 0
+
         for imgs, labels in train_loader:
-            imgs, labels = imgs.to(DEVICE), labels.to(DEVICE)
-            logits = model(imgs)
-            loss   = criterion(logits, labels)
+
+            imgs = imgs.to(DEVICE)
+            labels = labels.to(DEVICE)
+
+            outputs = model(imgs)
+
+            loss = criterion(outputs, labels)
+
             optimizer.zero_grad()
+
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+
             optimizer.step()
-            scheduler.step()
-            total_loss += loss.item()
-            correct    += (logits.argmax(1) == labels).sum().item()
-            total      += len(labels)
 
-        train_acc  = correct / max(total, 1)
-        avg_loss   = total_loss / max(len(train_loader), 1)
+            running_loss += loss.item()
 
-        # ── validate ──
+            preds = outputs.argmax(1)
+
+            correct += (preds == labels).sum().item()
+
+            total += len(labels)
+
+        train_acc = correct / total
+
+        # ================= VALIDATION =================
+
         model.eval()
-        v_correct = v_total = 0
-        with torch.no_grad():
-            for imgs, labels in val_loader:
-                imgs, labels = imgs.to(DEVICE), labels.to(DEVICE)
-                preds     = model(imgs).argmax(1)
-                v_correct += (preds == labels).sum().item()
-                v_total   += len(labels)
 
-        val_acc = v_correct / max(v_total, 1)
-        train_losses.append(avg_loss)
+        v_correct = 0
+        v_total = 0
+
+        with torch.no_grad():
+
+            for imgs, labels in val_loader:
+
+                imgs = imgs.to(DEVICE)
+                labels = labels.to(DEVICE)
+
+                outputs = model(imgs)
+
+                preds = outputs.argmax(1)
+
+                v_correct += (preds == labels).sum().item()
+
+                v_total += len(labels)
+
+        val_acc = v_correct / v_total
+
+        train_losses.append(running_loss)
         val_accs.append(val_acc)
 
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            save_model(model.state_dict(), 'models/resnet50_image.pt')
+        print(f"\nEpoch {epoch+1}/{epochs}")
 
-        print(f"  Epoch {epoch:3d}/{epochs}  |  Loss: {avg_loss:.4f}  |  "
-              f"Train Acc: {train_acc:.4f}  |  Val Acc: {val_acc:.4f}  |  Best: {best_val_acc:.4f}")
+        print(f"Loss: {running_loss:.4f}")
 
-    # ── final evaluation ──────────────────────────────────────────────────────
-    section("Final Evaluation")
-    model.eval()
-    all_preds, all_true = [], []
-    with torch.no_grad():
-        for imgs, labels in val_loader:
-            imgs = imgs.to(DEVICE)
-            preds = model(imgs).argmax(1).cpu().numpy()
-            all_preds.extend(preds)
-            all_true.extend(labels.numpy())
+        print(f"Train Accuracy: {train_acc:.4f}")
 
-    print("\n" + classification_report(
-        all_true, all_preds,
-        target_names=train_ds.classes, zero_division=0
-    ))
+        print(f"Validation Accuracy: {val_acc:.4f}")
 
-    plot_history(train_losses, val_accs,
-                 'ResNet50 — Image Classifier Training',
-                 'models/image_training_curve.png')
+        # ================= SAVE BEST MODEL =================
 
-    ok(f"Best validation accuracy: {best_val_acc:.4f} ({best_val_acc*100:.2f}%)")
-    ok("Image model training complete!")
+        if val_acc > best_acc:
 
+            best_acc = val_acc
 
-def _make_demo_image_dataset():
-    """Creates a tiny synthetic image dataset of solid-color patches for smoke-testing."""
-    from PIL import Image
-    import random
+            save_model(
+                model.state_dict(),
+                'models/mobilenet_image.pt'
+            )
 
-    classes = ['real', 'ai', 'manipulated']
-    for split in ['train', 'val']:
-        for cls in classes:
-            path = f'datasets/images/{split}/{cls}'
-            os.makedirs(path, exist_ok=True)
-            n = 30 if split == 'train' else 10
-            for i in range(n):
-                color = tuple(random.randint(0,255) for _ in range(3))
-                img   = Image.new('RGB', (64,64), color)
-                img.save(os.path.join(path, f'{cls}_{i:04d}.png'))
-    ok("Demo image dataset created (replace with real CIFAKE data!)")
+            print("Best Model Saved!")
+
+    print("\nTraining Complete!")
+
+    print(f"Best Validation Accuracy: {best_acc:.4f}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
