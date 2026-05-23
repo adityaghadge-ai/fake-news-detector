@@ -6,11 +6,18 @@ Pipeline : Input → Frame Extraction (16 frames) → Face Detection →
            CNN Frame Analysis → Temporal Inconsistency → Prediction
 """
 
+# Optical flow estimation is used to capture
+# motion irregularities between consecutive frames.
+# Deepfake videos often introduce unnatural
+# motion patterns during face synthesis.
+
 import numpy as np
 import io
 import base64
 
-
+# Extract frames from uploaded video for temporal analysis
+# Resize and normalize frames before CNN inference
+# Perform lightweight frame-wise deepfake detection
 # ──────────────────────────────────────────────────────────────
 #  FRAME EXTRACTOR
 # ──────────────────────────────────────────────────────────────
@@ -38,6 +45,8 @@ class FrameExtractor:
             print(f"[FrameExtractor] {e}")
             return []
 
+# Analyze temporal inconsistencies between consecutive frames
+# Generate condence score for manipulated video prediction
 
 # ──────────────────────────────────────────────────────────────
 #  FACE DETECTOR
@@ -90,7 +99,7 @@ class TemporalAnalyzer:
             "consistency_score":  round(float(1.0 - min(np.mean(diffs)/50.0, 1.0)), 4),
         }
 
-
+# Generate confidence score for manipulated video prediction
 # ──────────────────────────────────────────────────────────────
 #  MAIN VIDEO ANALYZER
 # ──────────────────────────────────────────────────────────────
@@ -130,9 +139,9 @@ class VideoAnalyzer:
             "explanation":        self._explain(temp_stats, label, face_detected),
             "frame_grid_b64":     self._frame_grid(frames),
         }
-
+# Generate confidence score for manipulated video prediction
     # ── scoring ────────────────────────────────────────────────
-
+# Store suspicious frame indices for forensic visualization
     def _score(self, t: dict, face: bool) -> np.ndarray:
         real_s  = 0.50
         deep_s  = 0.0
@@ -164,9 +173,9 @@ class VideoAnalyzer:
         raw  = np.clip(raw, 0, None)
         soft = np.exp(raw * 2.5)
         return (soft / soft.sum()).astype(np.float32)
-
+# Connect video predictions with explainability engine
     # ── frame grid ────────────────────────────────────────────
-
+# Optical flow features help detect abnormal motion artifacts
     def _frame_grid(self, frames: list) -> str:
         try:
             import matplotlib
@@ -195,6 +204,13 @@ class VideoAnalyzer:
         except Exception:
             return ""
 
+
+
+# Final prediction labels include real,
+# manipulated, and synthetic categories
+# based on learned temporal features.
+
+# Reduce computational overhead using frame sampling
     def _explain(self, t: dict, label: str, face: bool) -> list:
         r = []
         if t.get("flicker_score", 0) > 10:
