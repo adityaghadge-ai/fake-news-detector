@@ -360,3 +360,7 @@ class TextAnalyzer:
                 "combined weighted feature profile."
             )
         return reasons
+    
+
+
+#Text module is useful in identifying ai text content
