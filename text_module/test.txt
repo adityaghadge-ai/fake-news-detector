@@ -1,3 +1,237 @@
+# System Architecture – Fake News and AI-Generated Text Detection System
+
+## Overview
+
+The proposed system is a hybrid intelligent text analysis framework designed to classify textual content into three categories: Human-Written, AI-Generated, and Fake News. The architecture combines Natural Language Processing (NLP), deep learning, and stylometric analysis to improve classification accuracy and interpretability. The system follows a modular pipeline architecture where each component performs a dedicated task before passing processed information to the next stage.
+
+---
+
+# 1. Input Layer
+
+The architecture begins with the input layer where the user provides textual content through a graphical interface, web application, or API endpoint. The text may consist of news articles, social media posts, blogs, or generated paragraphs.
+
+### Functions
+
+* Accept user text input
+* Validate empty or invalid data
+* Forward data to preprocessing module
+
+---
+
+# 2. Text Preprocessing Module
+
+The preprocessing stage cleans and standardizes the text before feature extraction. This improves the efficiency of the NLP model and removes unnecessary noise.
+
+### Operations Performed
+
+* Lowercase conversion
+* Removal of special characters
+* Tokenization
+* Sentence segmentation
+* Whitespace normalization
+* Noise filtering
+
+### Technologies Used
+
+* Python Regular Expressions
+* NLTK / SpaCy utilities
+
+The processed text is then forwarded simultaneously to two parallel branches:
+
+1. Deep Semantic Feature Extraction
+2. Stylometric Feature Extraction
+
+---
+
+# 3. Deep Semantic Feature Extraction Branch
+
+This branch captures contextual and semantic understanding from the text using a transformer-based language model.
+
+## DistilBERT Embedding Generator
+
+The system uses DistilBERT, a lightweight transformer model derived from BERT, to generate dense semantic embeddings.
+
+### Working
+
+* Tokenized text is converted into embeddings
+* Transformer attention layers analyze contextual meaning
+* CLS token embedding of dimension 768 is extracted
+
+### Output
+
+* 768-dimensional semantic feature vector
+
+### Advantages
+
+* Captures contextual meaning
+* Understands sentence relationships
+* Detects AI-generated writing patterns
+* Lightweight and faster than standard BERT
+
+---
+
+# 4. Stylometric Feature Extraction Branch
+
+This branch extracts handcrafted linguistic and writing-style features that help identify authorship patterns and fake-news characteristics.
+
+## Extracted Features
+
+The architecture extracts nine stylometric features:
+
+1. Lexical Diversity
+2. Sentence Length Variance
+3. Repetition Score
+4. Burstiness
+5. Readability Score
+6. Average Word Length
+7. Unique Bigram Ratio
+8. Punctuation Density
+9. Semantic Coherence
+
+### Purpose
+
+* Detect repetitive AI writing
+* Identify sensational fake-news language
+* Analyze writing rhythm and vocabulary usage
+* Improve explainability of predictions
+
+### Output
+
+* 9-dimensional stylometric feature vector
+
+---
+
+# 5. Hybrid Fusion Layer
+
+The semantic embedding vector and stylometric vector are combined in the hybrid fusion layer.
+
+## Fusion Process
+
+* DistilBERT features pass through dense neural layers
+* Stylometric features pass through a smaller feature branch
+* Both outputs are concatenated
+* Combined vector is forwarded to the classifier
+
+### Benefits
+
+* Combines deep semantic understanding with human linguistic analysis
+* Improves robustness and accuracy
+* Reduces dependence on a single feature source
+
+---
+
+# 6. HybridMLP Classification Module
+
+The fused vector is processed using a Multi-Layer Perceptron (MLP).
+
+## Architecture
+
+### Text Branch
+
+768 → 256 → 128 neurons
+
+### Stylometric Branch
+
+9 → 32 → 32 neurons
+
+### Final Classifier
+
+160 → 64 → 3 output classes
+
+### Activation Functions
+
+* ReLU activation
+* Softmax output layer
+
+### Output Classes
+
+* Human-Written
+* AI-Generated
+* Fake News
+
+The classifier predicts probabilities for each category and selects the class with maximum confidence.
+
+---
+
+# 7. Rule-Based Backup System
+
+If trained neural model weights are unavailable, the system automatically switches to a heuristic rule-based scoring mechanism.
+
+## Rule Parameters
+
+* Burstiness score
+* Sentence variance
+* Lexical diversity
+* Sensational keywords
+* Semantic coherence
+
+This ensures uninterrupted operation even without trained weights.
+
+---
+
+# 8. Explainable AI (XAI) Module
+
+The architecture includes an explainability component to justify predictions.
+
+## Explanation Generation
+
+The system generates human-readable explanations such as:
+
+* Uniform sentence structure detected
+* High repetition found
+* Sensational keywords identified
+* Low semantic coherence observed
+
+### Importance
+
+* Improves user trust
+* Provides transparency
+* Assists researchers and analysts
+
+---
+
+# 9. Output Layer
+
+The final output module displays:
+
+* Predicted label
+* Confidence score
+* Risk level
+* Stylometric metrics
+* Generated explanations
+
+The result can be shown in:
+
+* Terminal interface
+* Web dashboard
+* Streamlit application
+* Research visualization panels
+
+---
+
+# Overall Workflow
+
+Input Text → Preprocessing → DistilBERT + Stylometric Extraction → Hybrid Feature Fusion → HybridMLP Classification → XAI Explanation → Final Prediction
+
+---
+
+# Advantages of the Architecture
+
+* Hybrid AI + linguistic analysis
+* Fast transformer-based inference
+* Explainable predictions
+* Modular and scalable design
+* Supports research and real-time applications
+* Works even without trained model weights
+
+---
+
+# Conclusion
+
+The proposed architecture efficiently combines transformer-based semantic learning with handcrafted stylometric analysis to create a robust and interpretable text analysis system. By integrating deep learning, explainable AI, and rule-based backup mechanisms, the framework provides reliable classification of human-written, AI-generated, and fake-news content while maintaining scalability and transparency for future enhancements.
+
+Source code basis referenced from uploaded implementation. fileciteturn0file0
+
 www.youtube.com › @TaarakMehtaKaOoltahChashmahTaarak Mehta Ka Ooltah Chashmah - YouTube
 Authored and Created by Asit Kumarr Modi and produced by Neela Film Productions Private Limited, Taarak Mehta Ka Ooltah Chashmah (TMKOC) is an ongoing Indian television show that was first aired...
 
