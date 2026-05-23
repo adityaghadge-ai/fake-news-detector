@@ -5,9 +5,14 @@ Detects : Real Voice | AI-Generated Voice | Cloned Voice
 Pipeline : Audio → Librosa → MFCC + Spectral Features → CNN Classifier → Prediction + XAI
 """
 
-import numpy as np
-import io
+## Standard libraries 
+# No external dependencies at the top level (librosa, torch imported inside classes to allow graceful degradation)
+
+
 import base64
+import io
+import numpy as np
+
 
 
 # ──────────────────────────────────────────────────────────────
@@ -85,7 +90,6 @@ class AudioFeatureExtractor:
             if isinstance(v, list): vec.extend(v)
             elif isinstance(v, float): vec.append(v)
         return np.array(vec, dtype=np.float32)
-
 
 # ──────────────────────────────────────────────────────────────
 #  CNN AUDIO CLASSIFIER  (PyTorch)
@@ -285,3 +289,83 @@ class AudioAnalyzer:
     
 
 ### audio detection do completed finish lets gggoooooo
+
+# Taarak Mehta Ka Ooltah Chashmah
+
+# Article
+# Talk
+# Read
+# View source
+# View history
+
+# Tools
+# Appearance hide
+# Text
+
+# Small
+
+# Standard
+
+# Large
+# Width
+
+# Standard
+
+# Wide
+# Color
+
+# Automatic
+
+# Light
+
+# Dark
+# Page semi-protected
+# From Wikipedia, the free encyclopedia
+# (Redirected from TMKOC)
+# Taarak Mehta Ka Ooltah Chashmah
+# Taarak Mehta Ka Ooltah Chashmah
+# Also known as	TMKOC
+# Genre	Sitcom
+# Comedy
+# Created by	Asit Kumarr Modi
+# Based on	
+# Duniya Ne Undha Chashmah
+# by Tarak Mehta
+# Directed by	
+# Dharmessh Mehta
+# Abhishek Sharma
+# Dheeraj Palshetkar
+# Harshad Joshi
+# Malav Suresh Rajda
+# Starring	See below
+# Narrated by	Shailesh Lodha (2008–2022)
+# Sachin Shroff (2022–present)
+# Opening theme	Taarak Mehta Ka Ooltah Chashmah
+# Composer	Sunil Patni
+# Country of origin	India
+# Original language	Hindi
+# No. of seasons	1
+# No. of episodes	4,712
+# Production
+# Producers	
+# Asit Kumarr Modi
+# Neela Asit Modi
+# Camera setup	Multi-camera
+# Running time	19–22 minutes
+# Production company	Neela Film Productions
+# Original release
+# Network	Sony SAB
+# Release	28 July 2008 –
+# present
+# Related
+# Taarak Mehta Kka Chhota Chashmah
+# Taarak Mehta Ka Ooltah Chashmah (transl. "Taarak Mehta's Inverted Spectacles"), often abbreviated as TMKOC, is an Indian sitcom and comedy based on the weekly column Duniya Ne Undha Chasma by Tarak Mehta for the magazine Chitralekha. Produced by Asit Kumarr Modi, it is one of the longest-running television series in India. The series premiered on 28 July 2008 on Sony SAB and is also digitally available on SonyLIV.[1]
+
+# Plot
+# The series is set in Mumbai and follows the lives of the residents of Gokuldham Co-operative Housing Society, a diverse community with people from different cultural and regional backgrounds.
+
+# Most storylines focus on an individual, a family, or sometimes the entire society as they encounter and resolve various problems. The characters frequently support one another and celebrate festivals together, highlighting their close-knit bond.
+
+# A recurring theme centers on Jethalal Champaklal Gada, who often finds himself in comical situations and troubles, with brief moments of relief before new challenges arise.
+
+# Cast and characters
