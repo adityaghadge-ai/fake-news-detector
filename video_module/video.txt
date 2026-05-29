@@ -9,6 +9,7 @@ Modern deepfake generation techniques use neural networks, diffusion models, and
 The proposed video module performs lightweight frame-wise forensic analysis to detect suspicious visual artifacts and temporal inconsistencies commonly found in deepfake videos.
 
 ---
+its
 
 # Objectives of the Video Module
 
