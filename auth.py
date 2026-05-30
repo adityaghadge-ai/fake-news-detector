@@ -10,7 +10,7 @@ Features:
   - User stats dashboard
   - login_required decorator
 """
-
+#thie is the authentication which is done by sqlite3
 import os
 import sqlite3
 import functools
