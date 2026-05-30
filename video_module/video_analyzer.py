@@ -5,7 +5,7 @@ Detects : Real Video | Deepfake | Manipulated Video
 Pipeline : Input → Frame Extraction (16 frames) → Face Detection →
            CNN Frame Analysis → Temporal Inconsistency → Prediction
 """
-
+#numpy is used here
 # Optical flow estimation is used to capture
 # motion irregularities between consecutive frames.
 # Deepfake videos often introduce unnatural
