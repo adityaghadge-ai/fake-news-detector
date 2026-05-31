@@ -1,5 +1,5 @@
 """
-VIDEO ANALYSIS MODULE
+VIDEO MODULE
 =====================
 Detects : Real Video | Deepfake | Manipulated Video
 Pipeline : Input → Frame Extraction (16 frames) → Face Detection →
